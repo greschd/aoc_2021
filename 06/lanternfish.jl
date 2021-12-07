@@ -13,10 +13,10 @@ function get_new_counts(fish_counter)
 end
 
 function run_puzzle(filename, num_days)
-    input = readdlm(filename, ',', Int)
+    input = readdlm(filename, ',', BigInt)
     fish_counter = Dict()
     for days_until_birth = 0:8
-        fish_counter[days_until_birth] = sum(input .== days_until_birth)
+        fish_counter[days_until_birth] = sum(BigInt, input .== days_until_birth)
     end
 
     for _ = 1:num_days
