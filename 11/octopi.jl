@@ -39,7 +39,6 @@ end
 
 function run_puzzle_2(filename)
     values = read_input(filename)
-    # step_idx = 1
     for step_idx = 1:typemax(Int)
         values, count = run_step(values)
         if count == length(values)
