@@ -42,7 +42,6 @@ function run_puzzle(filename)
     input = read_input(filename)
     println("Part 1: ", find_path_cost(input))
     println("Part 2: ", find_path_cost(create_extended_input(input)))
-    # display(create_extended_input(input))
 end
 
 run_puzzle(ARGS[1])
