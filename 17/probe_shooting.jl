@@ -58,7 +58,6 @@ function run_puzzle(filename)
     x_area, y_area = parse_input(filename)
 
     println("Part 1: ", fld(y_area[1] * (y_area[1] + 1), 2)) # here we haven't validated n_steps against x...
-    # valid_nsteps = get_valid_nsteps(x_area)
     println("Part 2: ", get_num_starting_velocities(x_area, y_area))
 end
 
