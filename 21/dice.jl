@@ -79,21 +79,14 @@ function run_player_step(wfc)
     return remove_winning(wfc_new)
 end
 
-function run_dirac_dice_game(starting_positions)
-    p1, p2 = starting_positions
-    wfc_p1 = Dict((p1, 0) => BigInt(1))
-    wfc_p2 = Dict((p2, 0) => BigInt(1))
-
-    p1_wins = []
-    p2_wins = []
-
-    while !(isempty(wfc_p1) & isempty(wfc_p2))
-        wfc_p1, new_wins_p1 = run_player_step(wfc_p1)
-        push!(p1_wins, new_wins_p1)
-        wfc_p2, new_wins_p2 = run_player_step(wfc_p2)
-        push!(p2_wins, new_wins_p2)
+function run_dirac_dice_game_single_player(starting_pos)
+    wfc = Dict((starting_pos, 0) => BigInt(1))
+    wins = []
+    while !isempty(wfc)
+        wfc, new_wins = run_player_step(wfc)
+        push!(wins, new_wins)
     end
-    p1_wins, p2_wins
+    wins
 end
 
 function evaluate_world_count(p1_wins, p2_wins)
@@ -113,13 +106,18 @@ function evaluate_world_count(p1_wins, p2_wins)
     p1_win_count, p2_win_count
 end
 
+function run_dirac_dice_game(starting_positions)
+    p1, p2 = starting_positions
+    evaluate_world_count(run_dirac_dice_game_single_player(p1), run_dirac_dice_game_single_player(p2))
+end
+
+
 function run_puzzle(filename)
     input = read_input(filename)
     scores, roll_count = run_dice_game(input)
     println("Part 1: ", minimum(scores) * roll_count)
 
-    p1_wins, p2_wins = run_dirac_dice_game(input)
-    println("Part 2: ", maximum(evaluate_world_count(p1_wins, p2_wins)))
+    println("Part 2: ", maximum(run_dirac_dice_game(input)))
 end
 
 run_puzzle(ARGS[1])
