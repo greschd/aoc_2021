@@ -16,8 +16,16 @@ function read_input(filename)
     line_iterator = Iterators.Stateful(eachline(open(filename)))
     popfirst!(line_iterator)
     num_slots = sum(collect(popfirst!(line_iterator)) .== '.')
-    caves = Matrix{Union{Nothing,Char}}([parse_cave_line(popfirst!(line_iterator)) parse_cave_line(popfirst!(line_iterator))])
-    cave_mapping = Dict(3 => caves[1, :], 5 => caves[2, :], 7 => caves[3, :], 9 => caves[4, :])
+    caves = []
+    for line in line_iterator
+        if all(occursin(char, " #") for char in collect(line))
+            break
+        end
+        # caves = hcat(caves..., parse_cave_line(line))
+        push!(caves, parse_cave_line(line))
+    end
+    caves_mat::Matrix{Union{Nothing,Char}} = cat(caves..., dims = 2)
+    cave_mapping = Dict(3 => caves_mat[1, :], 5 => caves_mat[2, :], 7 => caves_mat[3, :], 9 => caves_mat[4, :])
     hallway = Vector{Union{Nothing,Char}}([nothing for _ in 1:num_slots])
     cave_mapping, hallway
 end
@@ -41,30 +49,35 @@ function move_to_cave!(caves, hallway, start_pos, cave_idx, amphipod)
     hallway[start_pos] = nothing
     num_moves = 0
     cave = caves[cave_idx]
-    if cave[2] === nothing
-        cave[2] = amphipod
-        num_moves += 2
-    else
-        cave[1] = amphipod
-        num_moves += 1
+    for in_cave_idx in reverse(1:length(cave))
+        if cave[in_cave_idx] === nothing
+            cave[in_cave_idx] = amphipod
+            num_moves += in_cave_idx
+            break
+        end
     end
+
     start, stop = sort([start_pos, cave_idx])
     num_moves += (stop - start)
     COST[amphipod] * num_moves
 end
 
+function first_nonzero(cave)
+    for (in_cave_idx, val) in enumerate(cave)
+        if val !== nothing
+            return (in_cave_idx, val)
+        end
+    end
+end
+
 function move_to_hallway!(caves, hallway, cave_idx, hallway_idx)
     num_moves = 0
     cave = caves[cave_idx]
-    if cave[1] !== nothing
-        amphipod = cave[1]
-        cave[1] = nothing
-        num_moves += 1
-    else
-        amphipod = cave[2]
-        cave[2] = nothing
-        num_moves += 2
-    end
+    amphipod::Char = ' '
+    in_cave_idx, amphipod = first_nonzero(cave)
+    cave[in_cave_idx] = nothing
+    num_moves += in_cave_idx
+
     hallway[hallway_idx] = amphipod
     start, stop = sort([hallway_idx, cave_idx])
     num_moves += (stop - start)
@@ -76,6 +89,25 @@ function all_done(caves, hallway)
         all(val .== TARGETS_REVERSE[cave_idx] for val in cave_vals)
         for (cave_idx, cave_vals) in caves
     )
+end
+
+function creates_blocker(caves, hallway, cave_idx, hallway_idx)
+    _, first_amphipod = first_nonzero(caves[cave_idx])
+    target_idx = TARGETS[first_amphipod]
+    if target_idx > hallway_idx
+        for in_hallway_amphipod in filter(x -> x !== nothing, hallway[hallway_idx:target_idx])
+            if TARGETS[in_hallway_amphipod] < hallway_idx
+                return true
+            end
+        end
+    else
+        for in_hallway_amphipod in filter(x -> x !== nothing, hallway[target_idx:hallway_idx])
+            if TARGETS[in_hallway_amphipod] > hallway_idx
+                return true
+            end
+        end
+    end
+    return false
 end
 
 
@@ -114,7 +146,7 @@ function find_minimum_cost(caves, hallway, cutoff = typemax(Int))
             continue
         end
         for hallway_idx in HALLWAY_POSSIBLE_INDICES
-            if hallway_passable(hallway, cave_idx, hallway_idx)
+            if hallway_passable(hallway, cave_idx, hallway_idx) & !creates_blocker(caves, hallway, cave_idx, hallway_idx)
                 new_caves = deepcopy(caves)
                 new_hallway = deepcopy(hallway)
 
@@ -146,7 +178,7 @@ end
 
 function run_puzzle(filename)
     caves, hallway = read_input(filename)
-    println("Part 1: ", find_minimum_cost(caves, hallway, 100000))
+    println("Solution: ", find_minimum_cost(caves, hallway, 100000))
 end
 
 run_puzzle(ARGS[1])
