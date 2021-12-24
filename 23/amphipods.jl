@@ -21,7 +21,6 @@ function read_input(filename)
         if all(occursin(char, " #") for char in collect(line))
             break
         end
-        # caves = hcat(caves..., parse_cave_line(line))
         push!(caves, parse_cave_line(line))
     end
     caves_mat::Matrix{Union{Nothing,Char}} = cat(caves..., dims = 2)
